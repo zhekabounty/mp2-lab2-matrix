@@ -25,8 +25,9 @@ protected:
 public:
   TDynamicVector(size_t size = 1) : sz(size)
   {
-    if (sz == 0)
-      throw out_of_range("Vector size should be greater than zero");
+    if ((sz <= 0) || (sz > MAX_VECTOR_SIZE)) {
+        throw out_of_range("Vector size should be greater than zero and less than 100000000");
+    }
     pMem = new T[sz]();// {}; // У типа T д.б. констуктор по умолчанию
   }
   TDynamicVector(T* arr, size_t s) : sz(s)
@@ -61,7 +62,7 @@ public:
       if (sz != v.sz) {
           T* tmp = new T[v.sz]; // страховка от того, что new может выбросить
           if (pMem != nullptr) // исключение, и наш присваиваемый объект разрушится
-              delete[] pMem;   // этот костыль защищает наш объект от этого
+              delete[] pMem;   // это решение защищает наш объект от этого
           sz = v.sz;
           pMem = tmp;
       }
@@ -92,14 +93,14 @@ public:
   // индексация с контролем
   T& at(size_t ind)
   {
-      if (ind >= sz)
-          throw out_of_range;
+      if ((ind < 0) || (ind >= sz))
+          throw -1;
       return pMem[ind];
   }
   const T& at(size_t ind) const
   {
-      if (ind >= sz)
-          throw out_of_range;
+      if ((ind < 0) || (ind >= sz))
+          throw -1;
       return pMem[ind];
   }
 
@@ -172,12 +173,12 @@ public:
       }
       return tmp;
   }
-  T operator*(const TDynamicVector& v) noexcept(noexcept(T()))
+  T operator*(const TDynamicVector& v)
   {
       if (sz != v.sz) {
           throw - 1;
       }
-      T tmp();
+      T tmp{};
       for (size_t i = 0; i < sz; i++) {
           tmp += pMem[i] * v.pMem[i];
       }
@@ -216,11 +217,17 @@ class TDynamicMatrix : private TDynamicVector<TDynamicVector<T>>
 public:
   TDynamicMatrix(size_t s = 1) : TDynamicVector<TDynamicVector<T>>(s)
   {
+    if ((s <= 0) || (s > MAX_MATRIX_SIZE)) {
+        throw out_of_range("The size of the matrix must be greater than zero and less than 10000");
+    }
     for (size_t i = 0; i < sz; i++)
       pMem[i] = TDynamicVector<T>(sz);
   }
+  TDynamicMatrix(const TDynamicVector<TDynamicVector<T>> &m) :TDynamicVector<TDynamicVector<T>>(m) {}
 
   using TDynamicVector<TDynamicVector<T>>::operator[];
+  using TDynamicVector<TDynamicVector<T>>::size;
+  using TDynamicVector<TDynamicVector<T>>::at;
 
   // сравнение
   bool operator==(const TDynamicMatrix& m) const noexcept
@@ -231,16 +238,19 @@ public:
   // матрично-скалярные операции
   TDynamicMatrix operator*(const T& val)
   {
-      TDynamicMatrix tmp(sz);
+      /*TDynamicMatrix tmp(sz);
       for (sise_t i = 0; i < sz; i++) {
           tmp.pMem[i] = pMem[i] * val;
       }
-      return tmp;
+      return tmp;*/
+      return TDynamicVector<TDynamicVector<T>>::operator*(val);
   }
 
   // матрично-векторные операции
   TDynamicVector<T> operator*(const TDynamicVector<T>& v)
   {
+      if (sz != v.sz)
+          throw - 1;
       TDynamicVector<T> tmp(sz);
       for (int i = 0; i < sz; i++) {
           tmp[i] = pMem[i] * v;
@@ -251,24 +261,30 @@ public:
   // матрично-матричные операции
   TDynamicMatrix operator+(const TDynamicMatrix& m)
   {
-      TDynamicMatrix tmp(sz);
+      if (sz != m.sz)
+          throw - 1;
+      /*TDynamicMatrix tmp(sz);
       for (int i = 0; i < sz; i++) {
           tmp.pMem[i] = pMem[i] + m.pMem[i];
       }
-      return tmp;
-      //return TDynamicVector<TDynamicVector<T>>::operator+(m);
+      return tmp;*/
+      return TDynamicVector<TDynamicVector<T>>::operator+(m);
   }
   TDynamicMatrix operator-(const TDynamicMatrix& m)
   {
-      TDynamicMatrix tmp(sz);
+      if (sz != m.sz)
+          throw - 1;
+      /*TDynamicMatrix tmp(sz);
       for (int i = 0; i < sz; i++) {
           tmp.pMem[i] = pMem[i] - m.pMem[i];
       }
-      return tmp;
-      //return TDynamicVector<TDynamicVector<T>>::operator-(m);
+      return tmp;*/
+      return TDynamicVector<TDynamicVector<T>>::operator-(m);
   }
   TDynamicMatrix operator*(const TDynamicMatrix& m)
   {
+      if (sz != m.sz)
+          throw -1;
       TDynamicMatrix tmp(sz);
       for (int i = 0; i < sz; i++) {
           for (int j = 0; j < sz; j++) {
@@ -296,5 +312,4 @@ public:
       return ostr;
   }
 };
-
 #endif
